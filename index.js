@@ -1,159 +1,184 @@
-var _     = require('lodash'),
-    parse = require('xml2js').parseString,
-    yauzl = require('yauzl');
+var _ = require("lodash"),
+  parse = require("xml2js").parseString,
+  xpath = require("xpath"),
+  dom = require("xmldom").DOMParser,
+  yauzl = require("yauzl");
 
-var APP_XML  = require('./app.xml.json'),
-    CORE_XML = require('./core.xml.json');
+var APP_XML = require("./app.xml.json"),
+  CORE_XML = require("./core.xml.json"),
+  CUSTOM_XML = require("./custom.xml.json");
 
 function fromBuffer(buffer, cb) {
+  if (buffer && buffer instanceof Buffer && typeof cb === "function") {
+    yauzl.fromBuffer(buffer, { lazyEntries: true }, function(err, zipfile) {
+      if (err) return cb(err, null);
 
-    if (buffer && buffer instanceof Buffer && typeof cb === 'function') {
-
-        yauzl.fromBuffer(buffer, {lazyEntries: true}, function(err, zipfile) {
-
-            if (err) return cb(err, null);
-
-            readEntries(zipfile, cb);
-
-        });
-
+      readEntries(zipfile, cb);
+    });
+  } else {
+    if (typeof cb === "function") {
+      cb(new Error("Incorrect parameters."), null);
     } else {
-
-        if( typeof cb === 'function' ) {
-            cb( new Error('Incorrect parameters.'), null);
-        } else {
-            console.error('Incorrect parameters.');
-        }
-
+      console.error("Incorrect parameters.");
     }
-
+  }
 }
 
 function fromFilePath(filePath, cb) {
+  if (typeof filePath === "string" && typeof cb === "function") {
+    yauzl.open(filePath, { lazyEntries: true }, function(err, zipfile) {
+      if (err) return cb(err, null);
 
-    if (typeof filePath === 'string' && typeof cb === 'function') {
-
-        yauzl.open(filePath, {lazyEntries: true}, function(err, zipfile) {
-
-            if (err) return cb(err, null);
-
-            readEntries(zipfile, cb);
-
-        });
-
+      readEntries(zipfile, cb);
+    });
+  } else {
+    if (typeof cb === "function") {
+      cb(new Error("Incorrect parameters."), null);
     } else {
-
-        if( typeof cb === 'function' ) {
-            cb( new Error('Incorrect parameters.'), null);
-        } else {
-            console.error('Incorrect parameters.');
-        }
-
+      console.error("Incorrect parameters.");
     }
-
+  }
 }
 
 function readEntries(zipfile, cb) {
+  var data = {};
 
-    var data = {};
+  zipfile.readEntry();
 
-    zipfile.readEntry();
+  zipfile.on("end", function() {
+    cb(null, sortByKeys(data));
+  });
 
-    zipfile.on('end', function() {
-        cb(null, sortByKeys(data));
-    });
-
-    zipfile.on('entry', function(entry) {
-
-        switch (entry.fileName) {
-            case "docProps/app.xml":
-                readEntryStreamXML(zipfile, entry, function(err, result) {
-                    _.assign(data, getDocumentProperties(result, APP_XML));
-                    zipfile.readEntry();
-                });
-                break;
-            case "docProps/core.xml":
-                readEntryStreamXML(zipfile, entry, function(err, result) {
-                    _.assign(data, getDocumentProperties(result, CORE_XML));
-                    zipfile.readEntry();
-                });
-                break;
-            default:
-                zipfile.readEntry();
-        }
-    });
-
+  zipfile.on("entry", function(entry) {
+    switch (entry.fileName) {
+      case "docProps/app.xml":
+        readEntryStreamXML(zipfile, entry, function(err, result) {
+          _.assign(data, getDocumentProperties(result, APP_XML));
+          zipfile.readEntry();
+        });
+        break;
+      case "docProps/core.xml":
+        readEntryStreamXML(zipfile, entry, function(err, result) {
+          _.assign(data, getDocumentProperties(result, CORE_XML));
+          zipfile.readEntry();
+        });
+        break;
+      case "docProps/custom.xml":
+        readEntryStreamXMLasDOM(zipfile, entry, function(err, result) {
+          _.assign(data, getCustomDocumentProperties(result, CUSTOM_XML));
+          zipfile.readEntry();
+        });
+        break;
+      default:
+        zipfile.readEntry();
+    }
+  });
 }
 
 function readEntryStreamXML(zipfile, entry, cb) {
+  zipfile.openReadStream(entry, function(err, readStream) {
+    var data = "";
 
-    zipfile.openReadStream(entry, function(err, readStream) {
+    if (err) return cb(err, null);
 
-        var data = '';
-
-        if (err) return cb(err, null);
-
-        readStream.on('data', function(chunk) {
-            data += chunk;
-        });
-
-        readStream.on('end', function() {
-
-            parse(data, function(err, result) {
-
-                if (err) return cb(err, null);
-
-                cb(null, result);
-
-            });
-
-        });
-
+    readStream.on("data", function(chunk) {
+      data += chunk;
     });
 
+    readStream.on("end", function() {
+      parse(data, function(err, result) {
+        if (err) return cb(err, null);
+
+        cb(null, result);
+      });
+    });
+  });
+}
+
+function readEntryStreamXMLasDOM(zipfile, entry, cb) {
+  zipfile.openReadStream(entry, function(err, readStream) {
+    let data = "";
+
+    if (err) return cb(err, null);
+
+    readStream.on("data", function(chunk) {
+      data += chunk;
+    });
+
+    readStream.on("end", function() {
+      cb(null, new dom().parseFromString(data));
+    });
+  });
 }
 
 function getDocumentProperties(obj, props) {
+  var data = {};
 
-    var data = {};
+  _.forEach(props, function(prop) {
+    var val;
 
-    _.forEach(props, function(prop) {
+    if (_.has(obj, prop.path)) {
+      switch (prop.type) {
+        case "number":
+          val = _.toNumber(_.get(obj, prop.path));
+          break;
+        case "string":
+        default:
+          val = _.toString(_.get(obj, prop.path));
+      }
 
-        var val;
+      if (prop.type == "string" && _.isEmpty(val)) return;
 
-        if (_.has(obj, prop.path)) {
+      _.set(data, prop.name, val);
+    }
+  });
 
-            switch (prop.type) {
-                case "number":
-                    val = _.toNumber(_.get(obj, prop.path));
-                    break;
-                case "string":
-                default:
-                    val = _.toString(_.get(obj, prop.path));
-            }
+  return data;
+}
+function getCustomDocumentProperties(domObj, props) {
+  var data = {};
 
-            if (prop.type == "string" && _.isEmpty(val)) return;
+  var select = xpath.useNamespaces({
+    cp:
+      "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
+    vt: "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"
+  });
 
-            _.set(data, prop.name, val);
+  _.forEach(props, function(prop) {
+    var val;
 
-        }
+    var xpathResult = select(
+      `//cp:Properties/cp:property[@name="${prop.docxName}"]/vt:lpwstr/text()`,
+      domObj
+    );
 
-    });
+    if (xpathResult.length) {
+      switch (prop.type) {
+        case "number":
+          val = _.toNumber(xpathResult[0].nodeValue);
+          break;
+        case "string":
+        default:
+          val = _.toString(xpathResult[0].nodeValue);
+      }
 
-    return data;
+      if (prop.type == "string" && _.isEmpty(val)) return;
 
+      _.set(data, prop.name, val);
+    }
+  });
+
+  return data;
 }
 
 sortByKeys = object => {
-    const keys = Object.keys(object)
-    const sortedKeys = _.sortBy(keys)
+  const keys = Object.keys(object);
+  const sortedKeys = _.sortBy(keys);
 
-    return _.fromPairs(
-        _.map(sortedKeys, key => [key, object[key]])
-    )
-}
+  return _.fromPairs(_.map(sortedKeys, key => [key, object[key]]));
+};
 
 module.exports = {
-    fromBuffer: fromBuffer,
-    fromFilePath: fromFilePath
+  fromBuffer: fromBuffer,
+  fromFilePath: fromFilePath
 };
