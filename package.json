@@ -1,12 +1,11 @@
 {
-  "name": "office-document-properties",
-  "version": "1.0.7",
-  "homepage": "https://stevenwestmoreland.com/projects/office-document-properties.html",
-  "author": "Steven Westmoreland",
+  "name": "office-document-properties-with-custom",
+  "version": "0.0.1",
+  "author": "Steven Westmoreland & Jan Pfitzner",
   "description": "Read document properties from Microsoft Office Open XML documents.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/swestmoreland/office-document-properties.git"
+    "url": "git+https://github.com/alfrescian/office-document-properties.git"
   },
   "keywords": [
     "parse",

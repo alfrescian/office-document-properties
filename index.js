@@ -148,7 +148,7 @@ function getCustomDocumentProperties(domObj, props) {
     var val;
 
     var xpathResult = select(
-      `//cp:Properties/cp:property[@name="${prop.docxName}"]/vt:lpwstr/text()`,
+      `//cp:Properties/cp:property[@name="${prop.msName}"]/vt:lpwstr/text()`,
       domObj
     );
 

@@ -1,5 +1,5 @@
 [{
   "name": "status",
-  "docxName": "Status",
+  "msName": "Status",
   "type": "string"
 }]

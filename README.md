@@ -1,10 +1,10 @@
-<h3 align="center">office-document-properties</h3>
+<h3 align="center">office-document-properties-with-custom</h3>
 
-<p align="center">Read document properties from Microsoft Office Open XML documents.</p>
+<p align="center">Read document properties (incl custom properties) from Microsoft Office Open XML documents.</p>
 
 <p align="center">
-  <a href="https://badge.fury.io/js/office-document-properties">
-    <img src="https://badge.fury.io/js/office-document-properties.svg" alt="npm version badge">
+  <a href="https://badge.fury.io/js/office-document-properties-with-custom">
+    <img src="https://badge.fury.io/js/office-document-properties-with-custom.svg" alt="npm version badge">
   </a>
 </p>
 
@@ -17,7 +17,7 @@ Use this node module to read document properties and metadata from Microsoft Off
 To install via npm:
 
 ```sh
-npm install office-document-properties --save
+npm install office-document-properties-with-custom --save
 ```
 
 ## Usage
