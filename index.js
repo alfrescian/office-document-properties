@@ -5,8 +5,19 @@ var _ = require("lodash"),
   yauzl = require("yauzl");
 
 var APP_XML = require("./app.xml.json"),
-  CORE_XML = require("./core.xml.json"),
-  CUSTOM_XML = require("./custom.xml.json");
+  CORE_XML = require("./core.xml.json");
+
+var customPropertiesSettings = [];
+
+function provideCustomPropertiesSettings(settings) {
+  if (!_.isArray(settings)) {
+    console.error("Incorrect custom properties settings");
+
+    return;
+  }
+
+  customPropertiesSettings = settings;
+}
 
 function fromBuffer(buffer, cb) {
   if (buffer && buffer instanceof Buffer && typeof cb === "function") {
@@ -65,7 +76,10 @@ function readEntries(zipfile, cb) {
         break;
       case "docProps/custom.xml":
         readEntryStreamXMLasDOM(zipfile, entry, function(err, result) {
-          _.assign(data, getCustomDocumentProperties(result, CUSTOM_XML));
+          _.assign(
+            data,
+            getCustomDocumentProperties(result, customPropertiesSettings)
+          );
           zipfile.readEntry();
         });
         break;
@@ -179,6 +193,7 @@ sortByKeys = object => {
 };
 
 module.exports = {
+  provideCustomPropertiesSettings: provideCustomPropertiesSettings,
   fromBuffer: fromBuffer,
   fromFilePath: fromFilePath
 };

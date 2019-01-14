@@ -25,13 +25,25 @@ npm install office-document-properties-with-custom --save
 ### Import
 
 ```js
-var getDocumentProperties = require('office-document-properties');
+var documentProperties = require('office-document-properties-with-custom');
+```
+
+### Custom MS Office Properties (optional)
+
+```js
+var customPropertiesSettings = [{
+  "name": "status",
+  "msName": "Status",
+  "type": "string"
+}];
+
+documentPropertiesWorker.provideCustomPropertiesSettings(customPropertiesSettings);
 ```
 
 ### Read Document Properties from File
 
 ```js
-getDocumentProperties.fromFilePath(filePath, function(err, data) {
+documentProperties.fromFilePath(filePath, function(err, data) {
   if (err) throw err;
   console.log(data);
   /*
