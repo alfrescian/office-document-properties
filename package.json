@@ -1,6 +1,6 @@
 {
   "name": "office-document-properties-with-custom",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Steven Westmoreland & Jan Pfitzner",
   "description": "Read document properties from Microsoft Office Open XML documents.",
   "repository": {
